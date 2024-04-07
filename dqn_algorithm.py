@@ -1,10 +1,9 @@
-from deep_q_network import DeepQNetwork
+from DQN_network import DeepQNetwork
 from base_algorithm import BaseAlgorithm
 from random import *
 import torch
 from random import random
 import numpy as np
-import torch.nn.functional as F
 from collections import deque
 
 class DQNAlgorithm(BaseAlgorithm):

@@ -1,8 +1,7 @@
-import argparse
 import os
 import shutil
 import torch
-import logging  # Import logging
+import logging  
 from dqn_algorithm import DQNAlgorithm
 from tetris import Tetris
 import yaml
@@ -69,7 +68,6 @@ if __name__ == "__main__":
 
         # Initialize parameters for DQN
         if model_name == 'DQN':
-            # Initialize your DQN model here with the parameters
             opt = parameters
             create_directories(opt)
             train(opt)

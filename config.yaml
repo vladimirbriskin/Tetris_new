@@ -10,12 +10,12 @@ models:
       initial_epsilon: 1
       final_epsilon: 0.001
       num_decay_epochs: 2000
-      num_epochs: 30000
+      num_epochs: 3000
       save_interval: 1000
       replay_memory_size: 30000
       max_score: 30000
-      log_path: "DQN/logs"
-      saved_path: "DQN/trained_models"
+      log_path: "DQN_new/logs"
+      saved_path: "DQN_new/trained_models"
       device: "cpu"
 
   # - model_name: PPO

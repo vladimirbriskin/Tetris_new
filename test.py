@@ -1,15 +1,10 @@
-import torch
 from tetris import Tetris
 from dqn_algorithm import DQNAlgorithm
 import yaml
 
-def test(opt, num_epochs=10):
-    torch.manual_seed(123)
+def test(opt, agent, num_epochs=10):
     # Initialize the Tetris environment with the specified configuration
     env = Tetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'])
-    
-    # Initialize the agent with the options
-    agent = DQNAlgorithm(opt)
 
     # Load the state_dict into your model
     agent.load(f"{opt['saved_path']}/tetris_final.pth")
@@ -54,4 +49,5 @@ if __name__ == "__main__":
         model_name = model_config['model_name']
         if model_name == 'DQN':
             parameters = model_config['parameters']
-            test(parameters)
+            agent = DQNAlgorithm(parameters)
+            test(parameters,agent)

@@ -1,7 +1,7 @@
 # base_algorithm.py
 
 class BaseAlgorithm:
-    def select_action(self, state, epsilon):
+    def select_action(self, state, epoch):
         raise NotImplementedError
     
     def optimize_model(self, batch):
