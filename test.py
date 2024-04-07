@@ -4,16 +4,17 @@ from dqn_algorithm import DQNAlgorithm
 import yaml
 
 def test(opt, num_epochs=10):
+    torch.manual_seed(123)
     # Initialize the Tetris environment with the specified configuration
     env = Tetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'])
     
     # Initialize the agent with the options
     agent = DQNAlgorithm(opt)
-    
-    # Load the trained model and ensure it is in evaluation mode
-    agent.load(f"{opt['saved_path']}/tetris_final.pth")
-    agent.model.eval()
 
+    # Load the state_dict into your model
+    agent.load(f"{opt['saved_path']}/tetris_final.pth")
+
+    agent.model.eval()
     # Variables to keep track of scores, tetrominoes, and lines cleared
     total_score = 0
     total_tetrominoes = 0
@@ -26,8 +27,8 @@ def test(opt, num_epochs=10):
         
         while not done:
             next_steps = env.get_next_states()
-            action, _ = agent.select_action(next_steps, 0)  # Epoch=0 to disable exploration
-            _, done = env.step(action, render=False)  # Change render to True if you want to watch the game
+            action = agent.test_select_action(next_steps)
+            _, done = env.step(action, render=False)
 
         # Accumulate totals
         total_score += env.score

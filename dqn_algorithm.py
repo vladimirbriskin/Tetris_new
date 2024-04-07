@@ -73,6 +73,14 @@ class DQNAlgorithm(BaseAlgorithm):
 
         return loss.item()
     
+    def test_select_action(self,next_steps):
+        next_actions, next_states = zip(*next_steps.items())
+        next_states = torch.stack(next_states)
+        predictions = self.model(next_states)[:, 0]
+        index = torch.argmax(predictions).item()
+        action = next_actions[index]
+        return action
+
     def save(self, filepath):
         torch.save(self.model.state_dict(), filepath)
     
