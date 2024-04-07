@@ -5,29 +5,7 @@ import torch
 import logging  # Import logging
 from dqn_algorithm import DQNAlgorithm
 from tetris import Tetris
-
-def get_args():
-    parser = argparse.ArgumentParser(
-        """Implementation of Deep Q Network to play Tetris""")
-    parser.add_argument("--width", type=int, default=10, help="The common width for all images")
-    parser.add_argument("--height", type=int, default=20, help="The common height for all images")
-    parser.add_argument("--block_size", type=int, default=30, help="Size of a block")
-    parser.add_argument("--batch_size", type=int, default=512, help="The number of images per batch")
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--gamma", type=float, default=0.99)
-    parser.add_argument("--initial_epsilon", type=float, default=1)
-    parser.add_argument("--final_epsilon", type=float, default=1e-3)
-    parser.add_argument("--num_decay_epochs", type=float, default=2000)
-    parser.add_argument("--num_epochs", type=int, default=3000)
-    parser.add_argument("--save_interval", type=int, default=200)
-    parser.add_argument("--replay_memory_size", type=int, default=30000,
-                        help="Number of epoches between testing phases")
-    parser.add_argument("--log_path", type=str, default="logs")  # Changed default path
-    parser.add_argument("--saved_path", type=str, default="trained_models")
-    parser.add_argument("--device", type=str, default="cpu")
-
-    args = parser.parse_args()
-    return args
+import yaml
 
 def setup_logging(log_path):
     if os.path.isdir(log_path):
@@ -38,19 +16,24 @@ def setup_logging(log_path):
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
+def create_directories(opt):
+    """Create directories specified in the options."""
+    os.makedirs(opt['log_path'], exist_ok=True)
+    os.makedirs(opt['saved_path'], exist_ok=True)
+
 def train(opt):
     torch.manual_seed(123)
-    setup_logging(opt.log_path)  # Setup logging
+    setup_logging(opt['log_path'])  # Setup logging
 
-    env = Tetris(width=opt.width, height=opt.height, block_size=opt.block_size)
+    env = Tetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'])
     agent = DQNAlgorithm(opt)
     state = env.reset()
     epoch = 0
-    while epoch < opt.num_epochs:
+    while epoch < opt['num_epochs'] and env.score < opt['max_score']:
         next_steps = env.get_next_states()
 
         action, next_state = agent.select_action(next_steps, epoch)
-        reward, done = env.step(action, render=True)
+        reward, done = env.step(action, render=False)
         agent.add_replay(state, reward, next_state, done)
 
         if done:
@@ -69,12 +52,25 @@ def train(opt):
 
         epoch += 1
 
-        if epoch > 0 and epoch % opt.save_interval == 0:
-            agent.save(f"{opt.saved_path}/tetris_{epoch}.pth")
+        if epoch > 0 and epoch % opt['save_interval'] == 0:
+            agent.save(f"{opt['saved_path']}/tetris_{epoch}.pth")
 
-    agent.save(f"{opt.saved_path}/tetris_final.pth")
+    agent.save(f"{opt['saved_path']}/tetris_final.pth")
 
 
 if __name__ == "__main__":
-    opt = get_args()
-    train(opt)
+    config_file_path = 'config.yaml'
+    with open(config_file_path, 'r') as file:
+        config = yaml.safe_load(file)
+
+    for model_config in config['models']:
+        model_name = model_config['model_name']
+        parameters = model_config['parameters']
+
+        # Initialize parameters for DQN
+        if model_name == 'DQN':
+            # Initialize your DQN model here with the parameters
+            opt = parameters
+            create_directories(opt)
+            train(opt)
+            

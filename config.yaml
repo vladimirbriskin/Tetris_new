@@ -1,0 +1,30 @@
+models:
+  - model_name: DQN
+    parameters:
+      width: 10
+      height: 20
+      block_size: 30
+      batch_size: 512
+      lr: 0.001
+      gamma: 0.99
+      initial_epsilon: 1
+      final_epsilon: 0.001
+      num_decay_epochs: 2000
+      num_epochs: 30000
+      save_interval: 1000
+      replay_memory_size: 30000
+      max_score: 30000
+      log_path: "DQN/logs"
+      saved_path: "DQN/trained_models"
+      device: "cpu"
+
+  # - model_name: PPO
+  #   parameters:
+  #     learning_rate: 0.00025
+  #     gamma: 0.95
+  #     gae_lambda: 0.95
+  #     entropy_coefficient: 0.01
+  #     value_loss_coefficient: 0.5
+  #     epsilon_clip: 0.2
+  #     num_epochs: 10
+  #     batch_size: 64

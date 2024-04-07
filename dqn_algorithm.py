@@ -9,16 +9,17 @@ from collections import deque
 
 class DQNAlgorithm(BaseAlgorithm):
     def __init__(self, args):
-        self.model = DeepQNetwork().to(args.device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=args.lr)
+        self.model = DeepQNetwork().to(args['device'])
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=args['lr'])
         self.criterion = torch.nn.MSELoss()
-        self.device = args.device
-        self.replay_memory_size = args.replay_memory_size
-        self.replay_memory = deque(maxlen=args.replay_memory_size)
-        self.gamma = args.gamma
-        self.final_epsilon = args.final_epsilon
-        self.num_decay_epochs = args.num_decay_epochs
-        self.initial_epsilon = args.initial_epsilon
+        self.device = args['device']
+        self.replay_memory_size = args['replay_memory_size']
+        self.replay_memory = deque(maxlen=args['replay_memory_size'])
+        self.gamma = args['gamma']
+        self.final_epsilon = args['final_epsilon']
+        self.num_decay_epochs = args['num_decay_epochs']
+        self.initial_epsilon = args['initial_epsilon']
+        self.batch_size = args['batch_size']
 
     def select_action(self, state, epoch):
         # Exploration or exploitation
@@ -40,9 +41,9 @@ class DQNAlgorithm(BaseAlgorithm):
             index = torch.argmax(predictions).item()
         next_state = next_states[index, :]
         action = next_actions[index]
-        return action,next_state
+        return action, next_state
 
-    def add_replay(self,state, reward, next_state, done):
+    def add_replay(self, state, reward, next_state, done):
         self.replay_memory.append([state, reward, next_state, done])
 
     def optimize_model(self):
