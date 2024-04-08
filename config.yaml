@@ -17,6 +17,23 @@ models:
       log_path: "DQN_new/logs"
       saved_path: "DQN_new/trained_models"
       device: "cpu"
+  - model_name: SAC
+    parameters:
+      width: 10
+      height: 20
+      block_size: 30
+      batch_size: 512
+      lr: 0.001
+      gamma: 0.99
+      initial_epsilon: 1
+      final_epsilon: 0.001
+      num_decay_epochs: 2000
+      num_epochs: 100000
+      save_interval: 10000
+      replay_memory_size: 30000
+      max_score: 30000
+      log_path: "SAC/logs"
+      saved_path: "SAC/trained_models"
 
   # - model_name: PPO
   #   parameters:
