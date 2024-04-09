@@ -73,7 +73,8 @@ def train(opt, model_name):
                 logging.info(f"Epoch: {epoch}, Loss: {loss}, Score: {final_score}, Tetrominoes: {final_tetrominoes}, Cleared lines: {final_cleared_lines}")
 
             epoch += 1
-
+            if (epoch) % opt['target_update'] == 0:  # update the target network
+                agent.target_model.load_state_dict(agent.model.state_dict())
             if epoch > 0 and epoch % opt['save_interval'] == 0:
                 agent.save(f"{opt['saved_path']}/tetris_{epoch}.pth")
 

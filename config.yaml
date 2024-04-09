@@ -14,6 +14,7 @@ models:
       save_interval: 1000
       replay_memory_size: 30000
       max_score: 30000
+      target_update: 4
       log_path: "DQN_new/logs"
       saved_path: "DQN_new/trained_models"
       device: "cpu"

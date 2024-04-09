@@ -9,6 +9,7 @@ from collections import deque
 class DQNAlgorithm(BaseAlgorithm):
     def __init__(self, args):
         self.model = DeepQNetwork().to(args['device'])
+        self.target_model = DeepQNetwork().to(args['device'])
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=args['lr'])
         self.criterion = torch.nn.MSELoss()
         self.device = args['device']
@@ -56,10 +57,10 @@ class DQNAlgorithm(BaseAlgorithm):
         next_state_batch = torch.stack(tuple(state for state in next_state_batch))
 
         q_values = self.model(state_batch)
-        self.model.eval()
+        self.target_model.eval()
         with torch.no_grad():
-            next_prediction_batch = self.model(next_state_batch)
-        self.model.train()
+            next_prediction_batch = self.target_model(next_state_batch)
+        self.target_model.train()
 
         y_batch = torch.cat(
             tuple(reward if done else reward + self.gamma * prediction for reward, done, prediction in
