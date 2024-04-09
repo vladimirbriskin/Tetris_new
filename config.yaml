@@ -24,13 +24,16 @@ models:
       height: 20
       block_size: 30
       batch_size: 512
-      lr: 0.001
+      hidden_size: 256
+      lr: 0.0005
+      alpha: 0.2
       gamma: 0.99
+      tau: 0.01
       initial_epsilon: 1
       final_epsilon: 0.001
       num_decay_epochs: 2000
-      num_epochs: 100000
-      save_interval: 10000
+      num_epochs: 10000
+      save_interval: 1000
       replay_memory_size: 30000
       max_score: 30000
       log_path: "SAC/logs"

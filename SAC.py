@@ -267,25 +267,25 @@ class Critic(nn.Module):
 
 # Define the Soft Actor-Critic agent
 class SAC_Agent(BaseAlgorithm):
-    def __init__(self, state_dim, action_dim, device, hidden_size=256, gamma=0.99, alpha=0.2, tau=0.005):
+    def __init__(self, state_dim, action_dim, device, hidden_size=256, gamma=0.99, alpha=0.2, tau=0.005, lr=3e-4):
         self.actor = Actor(state_dim, action_dim, hidden_size).to(device)
         self.actor_target = Actor(state_dim, action_dim, hidden_size).to(device)
         self.actor_target.load_state_dict(self.actor.state_dict())
-        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=3e-4)
+        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=lr)
 
         self.critic1 = Critic(state_dim, action_dim, hidden_size).to(device)
         self.critic1_target = Critic(state_dim, action_dim, hidden_size).to(device)
         self.critic1_target.load_state_dict(self.critic1.state_dict())
-        self.critic1_optimizer = optim.Adam(self.critic1.parameters(), lr=3e-4)
+        self.critic1_optimizer = optim.Adam(self.critic1.parameters(), lr=lr)
 
         self.critic2 = Critic(state_dim, action_dim, hidden_size).to(device)
         self.critic2_target = Critic(state_dim, action_dim, hidden_size).to(device)
         self.critic2_target.load_state_dict(self.critic2.state_dict())
-        self.critic2_optimizer = optim.Adam(self.critic2.parameters(), lr=3e-4)
+        self.critic2_optimizer = optim.Adam(self.critic2.parameters(), lr=lr)
 
         self.log_alpha = torch.tensor(np.log(alpha)).to(device)
         self.log_alpha.requires_grad = True
-        self.alpha_optimizer = optim.Adam([self.log_alpha], lr=3e-4)
+        self.alpha_optimizer = optim.Adam([self.log_alpha], lr=lr)
 
         self.alpha = alpha
         self.gamma = gamma
