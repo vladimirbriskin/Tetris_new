@@ -7,6 +7,7 @@ from SAC import SAC_Agent, ReplayBuffer
 from tetris import Tetris
 import yaml
 import sys
+import argparse
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -81,7 +82,7 @@ def train(opt, model_name):
         state = env.reset()
         batch_size = opt['batch_size']
         buffer = ReplayBuffer(opt['replay_memory_size'])
-        agent = SAC_Agent(state_dim=state.shape[0], action_dim=1, device=device)
+        agent = SAC_Agent(state_dim=state.shape[0], action_dim=2, device=device)
         collect_random(env=env, dataset=buffer, num_samples=10000, agent=agent)
         epoch = 0
         while epoch < opt['num_epochs'] and env.score < opt['max_score']:
@@ -101,7 +102,7 @@ def train(opt, model_name):
                 continue
             if loss is not None:  # Log loss if optimization occurred
                 logging.info(f"Epoch: {epoch}, Loss: {loss}, Score: {final_score}, Tetrominoes: {final_tetrominoes}, Cleared lines: {final_cleared_lines}")
-                # print(f"Epoch: {epoch}, Loss: {loss}, Score: {final_score}, Tetrominoes: {final_tetrominoes}, Cleared lines: {final_cleared_lines}")
+                print(f"Epoch: {epoch}, Loss: {loss}, Score: {final_score}, Tetrominoes: {final_tetrominoes}, Cleared lines: {final_cleared_lines}")
             epoch += 1
             if epoch > 0 and epoch % opt['save_interval'] == 0:
                 agent.save(f"{opt['saved_path']}/tetris_{epoch}.pth")

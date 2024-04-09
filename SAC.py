@@ -333,8 +333,11 @@ class SAC_Agent(BaseAlgorithm):
             self.critic2_target(next_state_batch, self.actor_target(next_state_batch))
         ) * done_batch
 
-        current_Q1 = self.critic1(state_batch, action_index_batch)
-        current_Q2 = self.critic2(state_batch, action_index_batch)
+        # current_Q1 = self.critic1(state_batch, action_index_batch)
+        # current_Q2 = self.critic2(state_batch, action_index_batch)
+
+        current_Q1 = self.critic1(state_batch, action_batch)
+        current_Q2 = self.critic2(state_batch, action_batch)
 
         critic1_loss = nn.functional.mse_loss(current_Q1, target_Q.detach())
         critic2_loss = nn.functional.mse_loss(current_Q2, target_Q.detach())
