@@ -1,5 +1,5 @@
 """
-@author: Viet Nguyen <nhviet1009@gmail.com>
+Based on {Viet Nguyen <nhviet1009@gmail.com>}'s original enviornment
 """
 import numpy as np
 from PIL import Image
@@ -64,6 +64,8 @@ class Tetris:
         self.ind = self.bag.pop()
         self.piece = [row[:] for row in self.pieces[self.ind]]
         self.current_pos = {"x": self.width // 2 - len(self.piece[0]) // 2, "y": 0}
+        self.next_ind = self.bag.pop()
+        self.next_piece = [row[:] for row in self.pieces[self.next_ind]]
         self.gameover = False
         return self.get_state_properties(self.board)
 
@@ -107,17 +109,21 @@ class Tetris:
         total_bumpiness = np.sum(diffs)
         return total_bumpiness, total_height
 
-    def get_next_states(self):
-        states = {}
-        piece_id = self.ind
-        curr_piece = [row[:] for row in self.piece]
-        # num_rotations = 4
+    def get_rotation_times(self,piece_id):
         if piece_id == 0:  # O piece
             num_rotations = 1
         elif piece_id == 2 or piece_id == 3 or piece_id == 4:
             num_rotations = 2
         else:
             num_rotations = 4
+        return num_rotations
+    
+    def get_next_states(self):
+        states = {}
+        piece_id = self.ind
+        curr_piece = [row[:] for row in self.piece]
+        next_piece_id = self.next_ind
+        num_rotations = self.get_rotation_times(piece_id)
 
         for i in range(num_rotations):
             valid_xs = self.width - len(curr_piece[0])
@@ -128,7 +134,26 @@ class Tetris:
                     pos["y"] += 1
                 self.truncate(piece, pos)
                 board = self.store(piece, pos)
-                states[(x, i)] = self.get_state_properties(board)
+                states[(next_piece_id,piece_id, x, i)] = self.get_state_properties(board)
+            curr_piece = self.rotate(curr_piece)
+        return states
+    
+    def get_next_next_states(self):
+        states = []
+        piece_id = self.ind
+        curr_piece = [row[:] for row in self.piece]
+        num_rotations = self.get_rotation_times(piece_id)
+
+        for i in range(num_rotations):
+            valid_xs = self.width - len(curr_piece[0])
+            for x in range(valid_xs + 1):
+                piece = [row[:] for row in curr_piece]
+                pos = {"x": x, "y": 0}
+                while not self.check_collision(piece, pos):
+                    pos["y"] += 1
+                self.truncate(piece, pos)
+                board = self.store(piece, pos)
+                states.append(self.get_state_properties(board))
             curr_piece = self.rotate(curr_piece)
         return states
 
@@ -139,15 +164,19 @@ class Tetris:
                 board[y + self.current_pos["y"]][x + self.current_pos["x"]] = self.piece[y][x]
         return board
 
-    def new_piece(self):
-        if not len(self.bag):
-            self.bag = list(range(len(self.pieces)))
-            random.shuffle(self.bag)
-        self.ind = self.bag.pop()
+    def new_piece(self,next_piece_id):
+        self.ind = next_piece_id
         self.piece = [row[:] for row in self.pieces[self.ind]]
         self.current_pos = {"x": self.width // 2 - len(self.piece[0]) // 2,
                             "y": 0
                             }
+        
+        if not len(self.bag):
+            self.bag = list(range(len(self.pieces)))
+            random.shuffle(self.bag)
+        self.next_ind = self.bag.pop()
+        self.next_piece = [row[:] for row in self.pieces[self.next_ind]]
+        
         if self.check_collision(self.piece, self.current_pos):
             self.gameover = True
 
@@ -203,7 +232,7 @@ class Tetris:
         return board
 
     def step(self, action, render=True, video=None):
-        x, num_rotations = action
+        next_piece_id, piece_id, x, num_rotations = action
         self.current_pos = {"x": x, "y": 0}
         for _ in range(num_rotations):
             self.piece = self.rotate(self.piece)
@@ -225,7 +254,7 @@ class Tetris:
         self.tetrominoes += 1
         self.cleared_lines += lines_cleared
         if not self.gameover:
-            self.new_piece()
+            self.new_piece(next_piece_id)
         if self.gameover:
             self.score -= 2
 

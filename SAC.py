@@ -321,7 +321,7 @@ class SAC_Agent(BaseAlgorithm):
         # next_state_batch = torch.FloatTensor(next_state_batch).to(self.device)
         # done_batch = torch.FloatTensor(1 - done_batch).to(self.device)
         state_batch = torch.stack(tuple(state for state in state_batch)).to(self.device)
-        action_batch = torch.stack(tuple(action for action in action_batch)).to(self.device)
+        action_batch = torch.stack(tuple(action[2:4] for action in action_batch)).to(self.device)
         action_index_batch = torch.stack(tuple(action_index for action_index in action_index_batch)).to(self.device)
         reward_batch = torch.from_numpy(np.array(reward_batch, dtype=np.float32)[:, None]).to(self.device)
         next_state_batch = torch.stack(tuple(next_state for next_state in next_state_batch)).to(self.device)

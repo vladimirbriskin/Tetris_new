@@ -1,5 +1,7 @@
 from tetris import Tetris
-from dqn_algorithm import DQNAlgorithm
+from DQN_algorithm import DQNAlgorithm
+from DDQN_algorithm import DDQNAlgorithm
+from NoisyDQN_algorithm import NoisyDQNAlgorithm
 import yaml
 from SAC import SAC_Agent, ReplayBuffer
 import argparse
@@ -11,7 +13,7 @@ def get_args():
     args = parser.parse_args()
     return args
 
-def test(opt, agent, model_name, num_epochs=1):
+def test(opt, agent, model_name, num_epochs=10):
     # Initialize the Tetris environment with the specified configuration
     env = Tetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'])
 
@@ -40,6 +42,43 @@ def test(opt, agent, model_name, num_epochs=1):
             total_cleared_lines += env.cleared_lines
             
             print(f"Epoch {epoch + 1}: Score = {env.score}, Tetrominoes = {env.tetrominoes}, Cleared lines = {env.cleared_lines}")
+    elif model_name == "DDQN":
+        agent.model.eval()
+        for epoch in range(num_epochs):
+            state = env.reset()
+            done = False
+            
+            while not done:
+                next_steps = env.get_next_states()
+                action = agent.test_select_action(next_steps)
+                _, done = env.step(action, render=False)
+
+            # Accumulate totals
+            total_score += env.score
+            total_tetrominoes += env.tetrominoes
+            total_cleared_lines += env.cleared_lines
+            
+            print(f"Epoch {epoch + 1}: Score = {env.score}, Tetrominoes = {env.tetrominoes}, Cleared lines = {env.cleared_lines}")
+
+    elif model_name == "NoisyDQN":
+        agent.model.eval()
+        for epoch in range(num_epochs):
+            state = env.reset()
+            done = False
+            
+            while not done:
+                next_steps = env.get_next_states()
+                action = agent.test_select_action(next_steps)
+                _, done = env.step(action, render=False)
+
+            # Accumulate totals
+            total_score += env.score
+            total_tetrominoes += env.tetrominoes
+            total_cleared_lines += env.cleared_lines
+            
+            print(f"Epoch {epoch + 1}: Score = {env.score}, Tetrominoes = {env.tetrominoes}, Cleared lines = {env.cleared_lines}")
+
+
     elif model_name == "SAC":
         agent.actor.eval()
         for epoch in range(num_epochs):
@@ -79,6 +118,10 @@ if __name__ == "__main__":
             parameters = model_config['parameters']
             if model_name == "DQN":
                 agent = DQNAlgorithm(parameters)
+            elif model_name == "DDQN":
+                agent = DDQNAlgorithm(parameters)
+            elif model_name == "NoisyDQN":
+                agent = NoisyDQNAlgorithm(parameters)
             elif model_name == "SAC":
                 agent = SAC_Agent(state_dim=4, 
                                   action_dim=2, 

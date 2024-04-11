@@ -6,7 +6,7 @@ from random import random
 import numpy as np
 from collections import deque
 
-class DQNAlgorithm(BaseAlgorithm):
+class DDQNAlgorithm(BaseAlgorithm):
     def __init__(self, args):
         self.model = DeepQNetwork().to(args['device'])
         self.target_model = DeepQNetwork().to(args['device'])
@@ -29,8 +29,8 @@ class DQNAlgorithm(BaseAlgorithm):
         random_action = u <= epsilon
         next_actions, next_states = zip(*state.items())
         next_states = torch.stack(next_states)
-        # if torch.cuda.is_available():
-        #     next_states = next_states.cuda()
+        if torch.cuda.is_available():
+            next_states = next_states.cuda()
         self.model.eval()
         with torch.no_grad():
             predictions = self.model(next_states)[:, 0]
@@ -47,10 +47,10 @@ class DQNAlgorithm(BaseAlgorithm):
         next_states = torch.stack(state)
         if torch.cuda.is_available():
             next_states = next_states.cuda()
-        self.target_model.eval()
+        self.model.eval()
         with torch.no_grad():
-            predictions = self.target_model(next_states)[:, 0] # DQN
-        self.target_model.train()
+            predictions = self.model(next_states)[:, 0] # DDQN
+        self.model.train()
         index = torch.argmax(predictions).item()
         return next_states[index,:]
 
@@ -70,12 +70,10 @@ class DQNAlgorithm(BaseAlgorithm):
         reward_batch = torch.from_numpy(np.array(reward_batch, dtype=np.float32)[:, None])
         next_state_batch = torch.stack(tuple(state for state in next_state_batch))
         next_next_state_batch = torch.stack(tuple(state for state in next_next_state_batch))       
-
         q_values = self.model(next_state_batch)
-        self.target_model.eval()
+
         with torch.no_grad():
             next_prediction_batch = self.target_model(next_next_state_batch)
-        self.target_model.train()
 
         y_batch = torch.cat(
             tuple(reward if done else reward + self.gamma * prediction for reward, done, prediction in
@@ -87,7 +85,7 @@ class DQNAlgorithm(BaseAlgorithm):
         self.optimizer.step()
 
         return loss.item()
-
+    
     def test_select_action(self,next_steps):
         next_actions, next_states = zip(*next_steps.items())
         next_states = torch.stack(next_states)
@@ -98,6 +96,6 @@ class DQNAlgorithm(BaseAlgorithm):
 
     def save(self, filepath):
         torch.save(self.model.state_dict(), filepath)
-
+    
     def load(self, filepath):
         self.model.load_state_dict(torch.load(filepath, map_location=self.device))
