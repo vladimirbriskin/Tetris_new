@@ -2,12 +2,13 @@ import os
 import shutil
 import torch
 import logging
-from DQN_algorithm import DQNAlgorithm
+from dqn_algorithm import DQNAlgorithm
 from DDQN_algorithm import DDQNAlgorithm
 from NoisyDQN_algorithm import NoisyDQNAlgorithm
 from SAC import SAC_Agent, ReplayBuffer
 from PG import PG_Agent
 from tetris import Tetris
+from vanilla_tetris import Tetris as PlainTetris
 import yaml
 import sys
 import argparse
@@ -195,7 +196,8 @@ def train(opt, model_name):
                 agent.save(f"{opt['saved_path']}/tetris_{epoch}.pth")
         agent.save(f"{opt['saved_path']}/tetris_final.pth")
 
-    elif model_name == "PG": # Policy Gradient
+    elif model_name == "PG": # REINFORCE Policy Gradient
+        env = PlainTetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'])
         state = env.reset()
         state_dim = state.shape[0]
         action_dim = 2
