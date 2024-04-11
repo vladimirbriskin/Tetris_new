@@ -2,11 +2,12 @@ import os
 import shutil
 import torch
 import logging
-from dqn_algorithm import DQNAlgorithm
+from DQN_algorithm import DQNAlgorithm
 from DDQN_algorithm import DDQNAlgorithm
 from NoisyDQN_algorithm import NoisyDQNAlgorithm
 from SAC import SAC_Agent, ReplayBuffer
 from PG import PG_Agent
+from PPO import PPO_Agent
 from tetris import Tetris
 from vanilla_tetris import Tetris as PlainTetris
 import yaml
@@ -180,6 +181,7 @@ def train(opt, model_name):
             while not done:
                 next_steps = env.get_next_states()
                 action, next_state, action_index = agent.select_action(next_steps)
+                # print(action)
                 reward, done = env.step(action, render=False)
                 buffer.add((state, torch.tensor(action), torch.tensor(action_index).unsqueeze(dim=-1), reward, next_state, done))
                 loss = agent.optimize_model(buffer, batch_size=batch_size)
@@ -240,6 +242,35 @@ def train(opt, model_name):
                 agent.save(f"{opt['saved_path']}/tetris_pg_{epoch}.pth")
 
         agent.save(f"{opt['saved_path']}/tetris_pg_final.pth")
+
+    elif model_name == "PPO":
+        env = PlainTetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'])
+        state = env.reset()
+        state_dim = state.shape[0]
+        action_dim = opt['width']
+        agent = PPO_Agent(input_dim=state_dim, output_dim=action_dim, env=env)
+        epoch = 0
+        train_rewards = []
+        test_rewards = []
+        num_trials = opt['num_trials']
+
+        while epoch < opt['num_epochs'] and env.score < opt['max_score']:
+            policy_loss, value_loss, train_reward = agent.train()
+            test_reward = agent.evaluate()
+            train_rewards.append(train_reward)
+            test_rewards.append(test_reward)
+            mean_train_rewards = np.mean(train_rewards[-num_trials:])
+            mean_test_rewards = np.mean(test_rewards[-num_trials:])
+            epoch += 1
+
+            # Logging
+            if epoch % opt['log_interval'] == 0:
+                logging.info(f'| Episode: {epoch:3} | Mean Train Rewards: {mean_train_rewards:5.1f} | Mean Test Rewards: {mean_test_rewards:5.1f} |')
+
+            if epoch > 0 and epoch % opt['save_interval'] == 0:
+                agent.save(f"{opt['saved_path']}/tetris_ppo_{epoch}.pth")
+
+        agent.save(f"{opt['saved_path']}/tetris_ppo_final.pth")
 
 if __name__ == "__main__":
     args = get_args()

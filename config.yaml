@@ -63,7 +63,7 @@ models:
       block_size: 30
       batch_size: 512
       hidden_size: 256
-      lr: 0.0005
+      lr: 0.000005
       alpha: 0.2
       gamma: 0.99
       tau: 0.01
@@ -105,3 +105,22 @@ models:
       max_score: 30000
       log_path: "PG/logs"
       saved_path: "PG/trained_models"
+
+  - model_name: PPO
+    parameters:
+      width: 10
+      height: 20
+      block_size: 30
+      batch_size: 512
+      hidden_size: 256
+      lr: 0.001
+      alpha: 0.2
+      gamma: 0.99
+      num_decay_epochs: 10000000
+      num_epochs: 10000000
+      save_interval: 50000
+      log_interval: 1000
+      max_score: 30000
+      num_trials: 25
+      log_path: "PPO/logs"
+      saved_path: "PPO/trained_models"

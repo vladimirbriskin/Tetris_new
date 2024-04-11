@@ -14,14 +14,14 @@ import sys
 # class ReplayBuffer:
 #     def __init__(self, buffer_size, batch_size, device):
 #         self.device = device
-#         self.memory = deque(maxlen=buffer_size)  
+#         self.memory = deque(maxlen=buffer_size)
 #         self.batch_size = batch_size
 #         self.experience = namedtuple("Experience", field_names=["state", "action", "reward", "next_state", "done"])
-    
+
 #     def add(self, state, action, reward, next_state, done):
 #         e = self.experience(state, action, reward, next_state, done)
 #         self.memory.append(e)
-    
+
 #     def sample(self):
 #         experiences = random.sample(self.memory, k=self.batch_size)
 #         states = torch.from_numpy(np.stack([e.state for e in experiences if e is not None])).float().to(self.device)
@@ -63,8 +63,8 @@ import sys
 #         z = action_probs == 0.0
 #         z = z.float() * 1e-8
 #         log_action_probabilities = torch.log(action_probs + z)
-#         return action.detach().cpu(), action_probs, log_action_probabilities        
-    
+#         return action.detach().cpu(), action_probs, log_action_probabilities
+
 #     def get_action(self, state):
 #         action_probs = self.forward(state)
 #         dist = Categorical(action_probs)
@@ -74,7 +74,7 @@ import sys
 #         z = z.float() * 1e-8
 #         log_action_probabilities = torch.log(action_probs + z)
 #         return action.detach().cpu(), action_probs, log_action_probabilities
-    
+
 #     def get_det_action(self, state):
 #         action_probs = self.forward(state)
 #         dist = Categorical(action_probs)
@@ -119,18 +119,18 @@ import sys
 #         self.target_entropy = -action_size  # -dim(A)
 #         self.log_alpha = torch.tensor([0.0], requires_grad=True)
 #         self.alpha = self.log_alpha.exp().detach()
-#         self.alpha_optimizer = optim.Adam(params=[self.log_alpha], lr=learning_rate) 
-        
-#         # Actor Network 
+#         self.alpha_optimizer = optim.Adam(params=[self.log_alpha], lr=learning_rate)
+
+#         # Actor Network
 #         self.actor_local = Actor(state_size, action_size, hidden_size).to(device)
-#         self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr=learning_rate)     
-        
+#         self.actor_optimizer = optim.Adam(self.actor_local.parameters(), lr=learning_rate)
+
 #         # Critic Network (w/ Target Network)
 #         self.critic1 = Critic(state_size, action_size, hidden_size, 2).to(device)
 #         self.critic2 = Critic(state_size, action_size, hidden_size, 1).to(device)
-        
+
 #         assert self.critic1.parameters() != self.critic2.parameters()
-        
+
 #         self.critic1_target = Critic(state_size, action_size, hidden_size).to(device)
 #         self.critic1_target.load_state_dict(self.critic1.state_dict())
 
@@ -138,8 +138,8 @@ import sys
 #         self.critic2_target.load_state_dict(self.critic2.state_dict())
 
 #         self.critic1_optimizer = optim.Adam(self.critic1.parameters(), lr=learning_rate)
-#         self.critic2_optimizer = optim.Adam(self.critic2.parameters(), lr=learning_rate) 
-    
+#         self.critic2_optimizer = optim.Adam(self.critic2.parameters(), lr=learning_rate)
+
 #     def select_action(self, state):
 #         next_actions, next_states = zip(*state.items())
 #         next_states = torch.stack(next_states)
@@ -154,13 +154,13 @@ import sys
 
 #     def calc_policy_loss(self, states, alpha):
 #         _, action_probs, log_pis = self.actor_local.evaluate(states)
-#         q1 = self.critic1(states)   
+#         q1 = self.critic1(states)
 #         q2 = self.critic2(states)
 #         min_Q = torch.min(q1,q2)
 #         actor_loss = (action_probs * (alpha * log_pis - min_Q )).sum(1).mean()
 #         log_action_pi = torch.sum(log_pis * action_probs, dim=1)
 #         return actor_loss, log_action_pi
-    
+
 #     def optimize_model(self, experiences, gamma, d=1):
 #         states, actions, rewards, next_states, dones = experiences
 #         # ---------------------------- update actor ---------------------------- #
@@ -184,12 +184,12 @@ import sys
 #             Q_target_next = action_probs * (torch.min(Q_target1_next, Q_target2_next) - self.alpha.to(self.device) * log_pis)
 
 #             # Compute Q targets for current states (y_i)
-#             Q_targets = rewards + (gamma * (1 - dones) * Q_target_next.sum(dim=1).unsqueeze(-1)) 
+#             Q_targets = rewards + (gamma * (1 - dones) * Q_target_next.sum(dim=1).unsqueeze(-1))
 
 #         # Compute critic loss
 #         q1 = self.critic1(states).gather(1, actions.long())
 #         q2 = self.critic2(states).gather(1, actions.long())
-        
+
 #         critic1_loss = 0.5 * F.mse_loss(q1, Q_targets)
 #         critic2_loss = 0.5 * F.mse_loss(q2, Q_targets)
 
@@ -208,7 +208,7 @@ import sys
 #         # ----------------------- update target networks ----------------------- #
 #         self.soft_update(self.critic1, self.critic1_target)
 #         self.soft_update(self.critic2, self.critic2_target)
-        
+
 #         return actor_loss.item(), alpha_loss.item(), critic1_loss.item(), critic2_loss.item(), current_alpha
 
 #     def soft_update(self, local_model , target_model):
@@ -217,7 +217,7 @@ import sys
 
 #     def save(self, filepath):
 #         torch.save(self.actor_local.state_dict(), filepath)
-    
+
 #     def load(self, filepath):
 #         self.actor_local.load_state_dict(torch.load(filepath, map_location=self.device))
 
@@ -296,8 +296,8 @@ class SAC_Agent(BaseAlgorithm):
     def select_action(self, state):
         next_actions, next_states = zip(*state.items())
         next_states = torch.stack(next_states)
-        if torch.cuda.is_available():
-            next_states = next_states.cuda()
+        # if torch.cuda.is_available():
+        #     next_states = next_states.cuda()
         # with torch.no_grad():
             # state = torch.FloatTensor(state).to(self.device)
             # action = self.actor(state).cpu().numpy()
@@ -314,7 +314,7 @@ class SAC_Agent(BaseAlgorithm):
     def optimize_model(self, replay_buffer, batch_size=128):
         state_batch, action_batch, action_index_batch, reward_batch, next_state_batch, done_batch = replay_buffer.sample(batch_size)
 
-        
+
         # state_batch = torch.FloatTensor(state_batch).to(self.device)
         # action_batch = torch.FloatTensor(action_batch).to(self.device)
         # reward_batch = torch.FloatTensor(reward_batch).to(self.device)
@@ -380,6 +380,6 @@ class SAC_Agent(BaseAlgorithm):
 
     def save(self, filepath):
         torch.save(self.actor.state_dict(), filepath)
-    
+
     def load(self, filepath):
         self.actor.load_state_dict(torch.load(filepath, map_location=self.device))
