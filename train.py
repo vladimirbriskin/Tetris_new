@@ -2,7 +2,9 @@ import os
 import shutil
 import torch
 import logging  
-from dqn_algorithm import DQNAlgorithm
+from DQN_algorithm import DQNAlgorithm
+from DDQN_algorithm import DDQNAlgorithm
+from NoisyDQN_algorithm import NoisyDQNAlgorithm
 from SAC import SAC_Agent, ReplayBuffer
 from tetris import Tetris
 import yaml
@@ -12,7 +14,7 @@ import numpy as np
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="DQN")  # Changed default path
+    parser.add_argument("--model", type=str, default="NoisyDQN")  # Changed default path
     args = parser.parse_args()
     return args
 
@@ -57,7 +59,10 @@ def train(opt, model_name):
 
             action, next_state = agent.select_action(next_steps, epoch)
             reward, done = env.step(action, render=False)
-            agent.add_replay(state, reward, next_state, done)
+            if not done:
+               next_next_steps = env.get_next_next_states()
+               next_next_state = agent.select_max_action(next_next_steps)
+            agent.add_replay(state, action, reward, next_state,next_next_state, done)
 
             if done:
                 final_score = env.score
@@ -80,6 +85,79 @@ def train(opt, model_name):
                 agent.save(f"{opt['saved_path']}/tetris_{epoch}.pth")
 
         agent.save(f"{opt['saved_path']}/tetris_final.pth")
+
+    elif model_name == "DDQN":
+        agent = DDQNAlgorithm(opt)
+        state = env.reset()
+        epoch = 0
+        while epoch < opt['num_epochs'] and env.score < opt['max_score']:
+            next_steps = env.get_next_states()
+
+            action, next_state = agent.select_action(next_steps, epoch)
+            reward, done = env.step(action, render=False)
+            if not done:
+               next_next_steps = env.get_next_next_states()
+               next_next_state = agent.select_max_action(next_next_steps)
+            agent.add_replay(state, action, reward, next_state,next_next_state, done)
+
+            if done:
+                final_score = env.score
+                final_tetrominoes = env.tetrominoes
+                final_cleared_lines = env.cleared_lines
+                state = env.reset()
+            else:
+                state = next_state
+                continue
+
+            loss = agent.optimize_model()
+
+            if loss is not None:  # Log loss if optimization occurred
+                logging.info(f"Epoch: {epoch}, Loss: {loss}, Score: {final_score}, Tetrominoes: {final_tetrominoes}, Cleared lines: {final_cleared_lines}")
+
+            epoch += 1
+            if (epoch) % opt['target_update'] == 0:  # update the target network
+                agent.target_model.load_state_dict(agent.model.state_dict())
+            if epoch > 0 and epoch % opt['save_interval'] == 0:
+                agent.save(f"{opt['saved_path']}/tetris_{epoch}.pth")
+
+        agent.save(f"{opt['saved_path']}/tetris_final.pth")
+    
+    elif model_name == "NoisyDQN":
+        agent = NoisyDQNAlgorithm(opt)
+        state = env.reset()
+        epoch = 0
+        while epoch < opt['num_epochs'] and env.score < opt['max_score']:
+            next_steps = env.get_next_states()
+
+            action, next_state = agent.select_action(next_steps, epoch)
+            reward, done = env.step(action, render=False)
+            if not done:
+               next_next_steps = env.get_next_next_states()
+               next_next_state = agent.select_max_action(next_next_steps)
+            agent.add_replay(state, action, reward, next_state,next_next_state, done)
+
+            if done:
+                final_score = env.score
+                final_tetrominoes = env.tetrominoes
+                final_cleared_lines = env.cleared_lines
+                state = env.reset()
+            else:
+                state = next_state
+                continue
+
+            loss = agent.optimize_model()
+
+            if loss is not None:  # Log loss if optimization occurred
+                logging.info(f"Epoch: {epoch}, Loss: {loss}, Score: {final_score}, Tetrominoes: {final_tetrominoes}, Cleared lines: {final_cleared_lines}")
+
+            epoch += 1
+            if (epoch) % opt['target_update'] == 0:  # update the target network
+                agent.target_model.load_state_dict(agent.model.state_dict())
+            if epoch > 0 and epoch % opt['save_interval'] == 0:
+                agent.save(f"{opt['saved_path']}/tetris_{epoch}.pth")
+
+        agent.save(f"{opt['saved_path']}/tetris_final.pth")
+        
     elif model_name == "SAC":
         state = env.reset()
         batch_size = opt['batch_size']
@@ -114,30 +192,6 @@ def train(opt, model_name):
             if epoch > 0 and epoch % opt['save_interval'] == 0:
                 agent.save(f"{opt['saved_path']}/tetris_{epoch}.pth")
         agent.save(f"{opt['saved_path']}/tetris_final.pth")  
-
-        # epoch = 0
-        # while epoch < opt['num_epochs'] and env.score < opt['max_score']:
-        #     next_steps = env.get_next_states()
-        #     action, next_state, action_index = agent.select_action(next_steps)
-        #     reward, done = env.step(action, render=False)
-            
-        #     buffer.add((state, torch.tensor(action), torch.tensor(action_index).unsqueeze(dim=-1), reward, next_state, done))
-        #     loss = agent.optimize_model(buffer, batch_size=batch_size)
-        #     if done:
-        #         final_score = env.score
-        #         final_tetrominoes = env.tetrominoes
-        #         final_cleared_lines = env.cleared_lines
-        #         state = env.reset()
-        #     else:
-        #         state = next_state
-        #         continue
-        #     if loss is not None:  # Log loss if optimization occurred
-        #         logging.info(f"Epoch: {epoch}, Loss: {loss}, Score: {final_score}, Tetrominoes: {final_tetrominoes}, Cleared lines: {final_cleared_lines}")
-        #         print(f"Epoch: {epoch}, Loss: {loss}, Score: {final_score}, Tetrominoes: {final_tetrominoes}, Cleared lines: {final_cleared_lines}")
-        #     epoch += 1
-        #     if epoch > 0 and epoch % opt['save_interval'] == 0:
-        #         agent.save(f"{opt['saved_path']}/tetris_{epoch}.pth")
-        # agent.save(f"{opt['saved_path']}/tetris_final.pth")  
 
 if __name__ == "__main__":
     args = get_args()

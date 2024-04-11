@@ -1,4 +1,4 @@
-from DQN_network import DeepQNetwork
+from NoisyDeepQNetwork import DeepQNetworkNoisy
 from base_algorithm import BaseAlgorithm
 from random import *
 import torch
@@ -6,10 +6,10 @@ from random import random
 import numpy as np
 from collections import deque
 
-class DQNAlgorithm(BaseAlgorithm):
+class NoisyDQNAlgorithm(BaseAlgorithm):
     def __init__(self, args):
-        self.model = DeepQNetwork().to(args['device'])
-        self.target_model = DeepQNetwork().to(args['device'])
+        self.model = DeepQNetworkNoisy().to(args['device'])
+        self.target_model = DeepQNetworkNoisy().to(args['device'])
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=args['lr'])
         self.criterion = torch.nn.MSELoss()
         self.device = args['device']
@@ -84,7 +84,12 @@ class DQNAlgorithm(BaseAlgorithm):
         self.optimizer.zero_grad()
         loss = self.criterion(q_values, y_batch)
         loss.backward()
+        for param in self.model.parameters():  
+            param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
+
+        self.model.reset_noise()
+        self.target_model.reset_noise()
 
         return loss.item()
     
