@@ -45,13 +45,16 @@ class Tetris:
          [7, 7, 7]]
     ]
 
-    def __init__(self, height=20, width=10, block_size=20):
+    def __init__(self, height=20, width=10, block_size=20, height_penalization = False, bumpiness_penalization = False,hole_penalization = False):
         self.height = height
         self.width = width
         self.block_size = block_size
         self.extra_board = np.ones((self.height * self.block_size, self.width * int(self.block_size / 2), 3),
                                    dtype=np.uint8) * np.array([204, 204, 255], dtype=np.uint8)
         self.text_color = (200, 20, 220)
+        self.height_penalization = height_penalization
+        self.bumpiness_penalization = bumpiness_penalization
+        self.hole_penalization = hole_penalization
         self.reset()
 
     def reset(self):
@@ -59,6 +62,9 @@ class Tetris:
         self.score = 0
         self.tetrominoes = 0
         self.cleared_lines = 0
+        self.totalheight = 0
+        self.totalbumpiness = 0
+        self.totalhole = 0
         self.bag = list(range(len(self.pieces)))
         random.shuffle(self.bag)
         self.ind = self.bag.pop()
@@ -249,7 +255,20 @@ class Tetris:
         self.board = self.store(self.piece, self.current_pos)
 
         lines_cleared, self.board = self.check_cleared_rows(self.board)
-        score = 1 + (lines_cleared ** 2) * self.width
+        score = 1 + (lines_cleared ** 2) * self.width 
+
+        new_bumpiness,new_height = self.get_bumpiness_and_height(self.board)
+        new_hole = self.get_holes(self.board)
+        if self.height_penalization:
+            score -= (new_height - self.totalheight)
+        if self.bumpiness_penalization:
+            score -= (new_bumpiness - self.totalbumpiness)
+        if self.hole_penalization:
+            score -= (new_hole - self.totalhole)
+
+        self.totalheight = new_height
+        self.totalbumpiness = new_bumpiness
+        self.totalhole = new_hole
         self.score += score
         self.tetrominoes += 1
         self.cleared_lines += lines_cleared

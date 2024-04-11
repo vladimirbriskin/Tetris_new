@@ -14,7 +14,7 @@ import numpy as np
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="NoisyDQN")  # Changed default path
+    parser.add_argument("--model", type=str, default="DQN")  # Changed default path
     args = parser.parse_args()
     return args
 
@@ -47,7 +47,7 @@ def train(opt, model_name):
     torch.manual_seed(123)
     setup_logging(opt['log_path'])  # Setup logging
 
-    env = Tetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'])
+    env = Tetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'],height_penalization = True, bumpiness_penalization = False,hole_penalization = True)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("model: {}".format(model_name))
     if model_name == "DQN":
