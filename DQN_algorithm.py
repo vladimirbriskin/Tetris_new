@@ -29,8 +29,8 @@ class DQNAlgorithm(BaseAlgorithm):
         random_action = u <= epsilon
         next_actions, next_states = zip(*state.items())
         next_states = torch.stack(next_states)
-        if torch.cuda.is_available():
-            next_states = next_states.cuda()
+        # if torch.cuda.is_available():
+        #     next_states = next_states.cuda()
         self.model.eval()
         with torch.no_grad():
             predictions = self.model(next_states)[:, 0]
@@ -87,7 +87,7 @@ class DQNAlgorithm(BaseAlgorithm):
         self.optimizer.step()
 
         return loss.item()
-    
+
     def test_select_action(self,next_steps):
         next_actions, next_states = zip(*next_steps.items())
         next_states = torch.stack(next_states)
@@ -98,6 +98,6 @@ class DQNAlgorithm(BaseAlgorithm):
 
     def save(self, filepath):
         torch.save(self.model.state_dict(), filepath)
-    
+
     def load(self, filepath):
         self.model.load_state_dict(torch.load(filepath, map_location=self.device))
