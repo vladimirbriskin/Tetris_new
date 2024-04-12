@@ -23,13 +23,18 @@ class PG_Agent:
         return model
 
     def select_action(self, state, next_steps):
+        next_actions, next_states = zip(*next_steps.items())
+        next_states = torch.stack(next_states)
         # state = state.view(1, -1)
-        action_probs = self.policy_network(state)
+        action_probs = self.policy_network(next_states)[:, 0]
         action_distribution = torch.distributions.Categorical(action_probs)
-        action = action_distribution.sample()
-        if action.dim() == 0:
-            action = action.unsqueeze(0)
-        return (action.item(), 0), action_distribution.log_prob(action)
+        actionIndex = action_distribution.sample()
+        action = next_actions[actionIndex]
+        # if action.dim() == 0:
+        #     action = action.unsqueeze(0)
+        # print(action)
+        next_state = next_states[actionIndex, :]
+        return action, action_distribution.log_prob(actionIndex).unsqueeze(0), next_state
 
     def calculate_returns(self, rewards, discount_factor, normalize = True):
         returns = []

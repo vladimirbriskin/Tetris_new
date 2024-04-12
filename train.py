@@ -17,7 +17,8 @@ import numpy as np
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="NoisyDQN")  # Changed default path
+    parser.add_argument("--model", type=str, default="NoisyDQN")
+    parser.add_argument("--run", type=int, default=0)
     args = parser.parse_args()
     return args
 
@@ -48,7 +49,7 @@ def collect_random(env, dataset, num_samples, agent):
 
 def train(opt, model_name):
     torch.manual_seed(123)
-    setup_logging(opt['log_path'])  # Setup logging
+    setup_logging(opt['log_path']+'/'+str(num_run))  # Setup logging
 
     env = Tetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'])
     # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -199,7 +200,6 @@ def train(opt, model_name):
         agent.save(f"{opt['saved_path']}/tetris_final.pth")
 
     elif model_name == "PG": # REINFORCE Policy Gradient
-        env = PlainTetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'])
         state = env.reset()
         state_dim = state.shape[0]
         action_dim = 2
@@ -219,15 +219,17 @@ def train(opt, model_name):
             while not done:
                 next_steps = env.get_next_states()
 
-                action, log_prob_action = agent.select_action(state, next_steps)
-                reward, done = env.step(action, render=False)
-                state = env.get_state_properties(env.board)
+                action, log_prob_action, next_state = agent.select_action(state, next_steps)
+                reward, done = env.step(action, render=True)
+                state = next_state
 
                 log_probs.append(log_prob_action)
                 rewards.append(reward)
                 episode_reward += reward
 
+            # print('log_probs Before', log_probs)
             log_probs = torch.cat(log_probs)
+            # print('log_probs After', log_probs)
             rewards_cal = agent.calculate_returns(rewards, discount_factor)
             loss = agent.update_policy(rewards_cal, log_probs)
 
@@ -247,7 +249,7 @@ def train(opt, model_name):
         env = PlainTetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'])
         state = env.reset()
         state_dim = state.shape[0]
-        action_dim = opt['width']
+        action_dim = 2
         agent = PPO_Agent(input_dim=state_dim, output_dim=action_dim, env=env)
         epoch = 0
         train_rewards = []
@@ -268,13 +270,14 @@ def train(opt, model_name):
                 logging.info(f'| Episode: {epoch:3} | Mean Train Rewards: {mean_train_rewards:5.1f} | Mean Test Rewards: {mean_test_rewards:5.1f} |')
 
             if epoch > 0 and epoch % opt['save_interval'] == 0:
-                agent.save(f"{opt['saved_path']}/tetris_ppo_{epoch}.pth")
+                agent.save(f"{opt['saved_path']}/{str(num_run)}/tetris_ppo_{epoch}.pth")
 
-        agent.save(f"{opt['saved_path']}/tetris_ppo_final.pth")
+        agent.save(f"{opt['saved_path']}/{str(num_run)}/tetris_ppo_final.pth")
 
 if __name__ == "__main__":
     args = get_args()
     model_name = args.model
+    num_run = args.run
     config_file_path = 'config.yaml'
     with open(config_file_path, 'r') as file:
         config = yaml.safe_load(file)
