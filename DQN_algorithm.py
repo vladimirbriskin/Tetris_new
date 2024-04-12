@@ -42,11 +42,10 @@ class DQNAlgorithm(BaseAlgorithm):
         next_state = next_states[index, :]
         action = next_actions[index]
         return action, next_state
-    
+
     def select_max_action(self,state):
         next_states = torch.stack(state)
-        if torch.cuda.is_available():
-            next_states = next_states.cuda()
+        next_states = next_states.to(self.device)
         self.target_model.eval()
         with torch.no_grad():
             predictions = self.target_model(next_states)[:, 0] # DQN
@@ -66,10 +65,10 @@ class DQNAlgorithm(BaseAlgorithm):
         batch = sample(self.replay_memory, min(len(self.replay_memory), self.batch_size))
         state_batch, action_batch, reward_batch, next_state_batch,next_next_state_batch, done_batch = zip(*batch)
         state_batch = torch.stack(tuple(state for state in state_batch))
-        
+
         reward_batch = torch.from_numpy(np.array(reward_batch, dtype=np.float32)[:, None])
         next_state_batch = torch.stack(tuple(state for state in next_state_batch))
-        next_next_state_batch = torch.stack(tuple(state for state in next_next_state_batch))       
+        next_next_state_batch = torch.stack(tuple(state for state in next_next_state_batch))
 
         q_values = self.model(next_state_batch)
         self.target_model.eval()
