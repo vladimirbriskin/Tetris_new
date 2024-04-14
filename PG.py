@@ -16,17 +16,21 @@ class PG_Agent:
     def build_network(self):
         model = torch.nn.Sequential(
             torch.nn.Linear(self.input_dim, 128),
+            torch.nn.Dropout(p=0.5),
             torch.nn.ReLU(),
             torch.nn.Linear(128, self.output_dim),
             torch.nn.Softmax(dim=-1)
+            # torch.nn.LogSoftmax(dim=-1)
         )
         return model
 
-    def select_action(self, state, next_steps):
+
+    def select_action(self, next_steps):
         next_actions, next_states = zip(*next_steps.items())
         next_states = torch.stack(next_states)
         # state = state.view(1, -1)
         action_probs = self.policy_network(next_states)[:, 0]
+        # print(action_probs)
         action_distribution = torch.distributions.Categorical(action_probs)
         actionIndex = action_distribution.sample()
         action = next_actions[actionIndex]
@@ -56,6 +60,8 @@ class PG_Agent:
         loss = - (returns * log_prob_actions).sum()
         self.optimizer.zero_grad()
         loss.backward()
+        for param in self.policy_network.parameters():
+            param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
         return loss.item()

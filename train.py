@@ -9,7 +9,7 @@ from SAC import SAC_Agent, ReplayBuffer
 from PG import PG_Agent
 from PPO import PPO_Agent
 from tetris import Tetris
-from vanilla_tetris import Tetris as PlainTetris
+
 import yaml
 import sys
 import argparse
@@ -51,7 +51,7 @@ def train(opt, model_name):
     torch.manual_seed(123)
     setup_logging(opt['log_path']+'/'+str(num_run))  # Setup logging
 
-    env = Tetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'])
+    env = Tetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'], height_penalization = False, bumpiness_penalization = False,hole_penalization = False)
     # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     device = torch.device("cpu")
     print("model: {}".format(model_name))
@@ -200,15 +200,16 @@ def train(opt, model_name):
         agent.save(f"{opt['saved_path']}/tetris_final.pth")
 
     elif model_name == "PG": # REINFORCE Policy Gradient
+        logging.info(f"Learing Rate: {opt['lr']}")
         state = env.reset()
         state_dim = state.shape[0]
         action_dim = 2
         agent = PG_Agent(input_dim=state_dim, output_dim=action_dim, learning_rate = opt['lr'])
-        agent.policy_network.train()
         discount_factor = opt['gamma']
         epoch = 0
 
         while epoch < opt['num_epochs'] and env.score < opt['max_score']:
+            agent.policy_network.train()
             state = env.reset()
             done = False
             log_probs = []
@@ -219,29 +220,41 @@ def train(opt, model_name):
             while not done:
                 next_steps = env.get_next_states()
 
-                action, log_prob_action, next_state = agent.select_action(state, next_steps)
+                action, log_prob_action, next_state = agent.select_action(next_steps)
                 reward, done = env.step(action, render=True)
-                state = next_state
 
                 log_probs.append(log_prob_action)
                 rewards.append(reward)
                 episode_reward += reward
 
-            # print('log_probs Before', log_probs)
             log_probs = torch.cat(log_probs)
-            # print('log_probs After', log_probs)
             rewards_cal = agent.calculate_returns(rewards, discount_factor)
             loss = agent.update_policy(rewards_cal, log_probs)
+            train_reward_total = episode_reward
 
-            epoch += 1
+            # Evaluate
+            agent.policy_network.eval()
+            state = env.reset()
+            done = False
+            episode_reward = 0
+            while not done:
+                next_steps = env.get_next_states()
+
+                action, log_prob_action, next_state = agent.select_action(next_steps)
+                reward, done = env.step(action, render=False)
+
+                episode_reward += reward
+            eval_reward_total = episode_reward
 
             # Logging
             final_score = env.score
             if epoch % opt['log_interval'] == 0:
-                logging.info(f"Epoch: {epoch}, Score: {final_score}, Loss: {loss}, Rewards: {rewards_cal}")
+                logging.info(f"Epoch: {epoch}, Score: {final_score}, Loss: {loss}, Train Reward: {train_reward_total}, Eval Reward: {eval_reward_total}")
 
             if epoch > 0 and epoch % opt['save_interval'] == 0:
                 agent.save(f"{opt['saved_path']}/tetris_pg_{epoch}.pth")
+
+            epoch += 1
 
         agent.save(f"{opt['saved_path']}/tetris_pg_final.pth")
 
