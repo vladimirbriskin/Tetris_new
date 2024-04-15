@@ -9,6 +9,7 @@ from SAC import SAC_Agent, ReplayBuffer
 from PG import PG_Agent
 from PPO import PPO_Agent
 from tetris import Tetris
+from tetris_new_state import Tetris as stateTetris
 
 import yaml
 import sys
@@ -200,11 +201,13 @@ def train(opt, model_name):
         agent.save(f"{opt['saved_path']}/tetris_final.pth")
 
     elif model_name == "PG": # REINFORCE Policy Gradient
+        env = stateTetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'], height_penalization = True, bumpiness_penalization = True,hole_penalization = True)
         logging.info(f"Learing Rate: {opt['lr']}")
+        logging.info(f"Penalization: Height: {True}, Bumpiness: {True}, Hole: {True}")
         state = env.reset()
-        state_dim = state.shape[0]
-        action_dim = 2
-        agent = PG_Agent(input_dim=state_dim, output_dim=action_dim, learning_rate = opt['lr'])
+        state_dim = opt['width'] * opt['height']
+        action_dim = 1
+        agent = PG_Agent(input_dim=state_dim, output_dim=action_dim, learning_rate = opt['lr'], device=device)
         discount_factor = opt['gamma']
         epoch = 0
 
@@ -215,13 +218,13 @@ def train(opt, model_name):
             log_probs = []
             rewards = []
             episode_reward = 0
-            state = torch.FloatTensor(state).unsqueeze(0)
+            # state = torch.FloatTensor(state).unsqueeze(0)
 
             while not done:
-                next_steps = env.get_next_states()
+                next_states = env.get_next_states()
 
-                action, log_prob_action, next_state = agent.select_action(next_steps)
-                reward, done = env.step(action, render=True)
+                action, log_prob_action, action_index = agent.select_action(next_states)
+                reward, done = env.step(action, render=False)
 
                 log_probs.append(log_prob_action)
                 rewards.append(reward)
@@ -259,10 +262,12 @@ def train(opt, model_name):
         agent.save(f"{opt['saved_path']}/tetris_pg_final.pth")
 
     elif model_name == "PPO":
-        env = PlainTetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'])
+        logging.info(f"Learing Rate: {opt['lr']}")
+        env = stateTetris(width=opt['width'], height=opt['height'], block_size=opt['block_size'], height_penalization = True, bumpiness_penalization = True,hole_penalization = True)
+        logging.info(f"Penalization: Height: {True}, Bumpiness: {True}, Hole: {True}")
         state = env.reset()
-        state_dim = state.shape[0]
-        action_dim = 2
+        state_dim = opt['width'] * opt['height']
+        action_dim = 1
         agent = PPO_Agent(input_dim=state_dim, output_dim=action_dim, env=env)
         epoch = 0
         train_rewards = []

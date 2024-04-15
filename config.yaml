@@ -112,13 +112,13 @@ models:
       block_size: 30
       batch_size: 512
       hidden_size: 256
-      lr: 0.001
+      lr: 0.0001
       alpha: 0.2
       gamma: 0.99
-      num_decay_epochs: 10000000
-      num_epochs: 10000000
-      save_interval: 50000
-      log_interval: 1000
+      num_decay_epochs: 100000
+      num_epochs: 1000000
+      save_interval: 1000
+      log_interval: 100
       max_score: 30000
       num_trials: 25
       log_path: "PPO/logs"
