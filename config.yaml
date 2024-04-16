@@ -13,7 +13,7 @@ models:
       num_epochs: 3000
       save_interval: 1000
       replay_memory_size: 30000
-      max_score: 30000
+      max_score: 1000000
       target_update: 4
       log_path: "DQN/logs"
       saved_path: "DQN/trained_models"
@@ -32,7 +32,7 @@ models:
       num_epochs: 3000
       save_interval: 1000
       replay_memory_size: 30000
-      max_score: 30000
+      max_score: 1000000
       target_update: 4
       log_path: "DDQN/logs"
       saved_path: "DDQN/trained_models"
@@ -51,7 +51,7 @@ models:
       num_epochs: 3000
       save_interval: 1000
       replay_memory_size: 30000
-      max_score: 30000
+      max_score: 1000000
       target_update: 4
       log_path: "NoisyDQN/logs"
       saved_path: "NoisyDQN/trained_models"

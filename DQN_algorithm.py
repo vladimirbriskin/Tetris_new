@@ -83,6 +83,8 @@ class DQNAlgorithm(BaseAlgorithm):
         self.optimizer.zero_grad()
         loss = self.criterion(q_values, y_batch)
         loss.backward()
+        for param in self.model.parameters():  
+            param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
         return loss.item()

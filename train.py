@@ -18,7 +18,7 @@ import numpy as np
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="NoisyDQN")
+    parser.add_argument("--model", type=str, default="DQN")
     parser.add_argument("--run", type=int, default=0)
     args = parser.parse_args()
     return args
