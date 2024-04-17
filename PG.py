@@ -20,8 +20,6 @@ class PG_Agent:
             torch.nn.Dropout(p=0.5),
             torch.nn.ReLU(),
             torch.nn.Linear(128, self.output_dim)
-            # torch.nn.Softmax(dim=-1)
-            # torch.nn.LogSoftmax(dim=-1)
         )
         return model.to(self.device)
 
